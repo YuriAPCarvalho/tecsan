@@ -1,0 +1,212 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  nome      String
+  cpf       String   @unique
+  senha     String
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  Entrada Entrada[]
+
+  Saida Saida[]
+
+  Transferencia Transferencia[]
+
+  Inventario Inventario[]
+}
+
+model Categoria {
+  id        Int       @id @default(autoincrement())
+  nome      String    @unique
+  ativo     Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  Produto   Produto[]
+  Saldo     Saldo[]
+}
+
+model Fazenda {
+  id        Int      @id @default(autoincrement())
+  nome      String   @unique
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  Estoque Estoque[]
+
+  Entrada Entrada[]
+
+  Saida Saida[]
+
+  Devolucao Transferencia[]
+
+  TransferenciaOrigem Transferencia[] @relation(name: "OrigemFazenda")
+
+  TransferenciaDestino Transferencia[] @relation(name: "DestinoFazenda")
+
+  Saldo Saldo[]
+
+  Inventario Inventario[]
+}
+
+model Estoque {
+  id        Int      @id @default(autoincrement())
+  nome      String   @unique
+  fazenda   Fazenda  @relation(fields: [fazendaId], references: [id])
+  fazendaId Int
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Produto   Produto? @relation(fields: [produtoId], references: [id])
+  produtoId Int?
+
+  Entrada Entrada[]
+
+  Saida Saida[]
+
+  Devolucao Transferencia[]
+
+  TransferenciaOrigem Transferencia[] @relation(name: "OrigemEstoque")
+
+  TransferenciaDestino Transferencia[] @relation(name: "DestinoEstoque")
+
+  Saldo Saldo[]
+
+  Inventario Inventario[]
+}
+
+model Produto {
+  id          Int           @id @default(autoincrement())
+  nome        String        @unique
+  patrimonio  String        @unique
+  categoria   Categoria     @relation(fields: [categoriaId], references: [id])
+  estado      ProdutoEstado
+  categoriaId Int
+  foto        String
+  ativo       Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  Estoque Estoque[]
+
+  Entrada Entrada[]
+
+  Saida Saida[]
+
+  Devolucao Transferencia[]
+
+  Saldo Saldo[]
+
+  Inventario Inventario[]
+
+  Transferencia Transferencia[] @relation(name: "TransferenciaProduto")
+}
+
+enum ProdutoEstado {
+  novo
+  usado
+}
+
+model Entrada {
+  id         Int      @id @default(autoincrement())
+  produto    Produto  @relation(fields: [produtoId], references: [id])
+  produtoId  Int
+  estoque    Estoque  @relation(fields: [estoqueId], references: [id])
+  estoqueId  Int
+  fazenda    Fazenda  @relation(fields: [fazendaId], references: [id])
+  fazendaId  Int
+  quantidade Int
+  valor      Float
+  usuario    Usuario  @relation(fields: [usuarioId], references: [id])
+  usuarioId  Int
+  ativo      Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Saida {
+  id         Int      @id @default(autoincrement())
+  produto    Produto  @relation(fields: [produtoId], references: [id])
+  produtoId  Int
+  estoque    Estoque  @relation(fields: [estoqueId], references: [id])
+  estoqueId  Int
+  fazenda    Fazenda  @relation(fields: [fazendaId], references: [id])
+  fazendaId  Int
+  quantidade Int
+  usuario    Usuario  @relation(fields: [usuarioId], references: [id])
+  usuarioId  Int
+  ativo      Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Transferencia {
+  id Int @id @default(autoincrement())
+
+  estoqueOrigem    Estoque  @relation(name: "OrigemEstoque", fields: [estoqueOrigemId], references: [id])
+  estoqueOrigemId  Int
+  fazendaOrigem    Fazenda  @relation(name: "OrigemFazenda", fields: [fazendaOrigemId], references: [id])
+  fazendaOrigemId  Int
+  estoqueDestino   Estoque  @relation(name: "DestinoEstoque", fields: [estoqueDestinoId], references: [id])
+  estoqueDestinoId Int
+  fazendaDestino   Fazenda  @relation(name: "DestinoFazenda", fields: [fazendaDestinoId], references: [id])
+  fazendaDestinoId Int
+  produto          Produto  @relation(name: "TransferenciaProduto", fields: [produtoId], references: [id])
+  produtoId        Int
+  quantidade       Int
+  usuario          Usuario  @relation(fields: [usuarioId], references: [id])
+  usuarioId        Int
+  ativo            Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  Fazenda Fazenda[]
+
+  Estoque Estoque[]
+
+  Produto Produto[]
+}
+
+model Saldo {
+  id          Int       @id @default(autoincrement())
+  categoria   Categoria @relation(fields: [categoriaId], references: [id])
+  categoriaId Int
+  fazenda     Fazenda   @relation(fields: [fazendaId], references: [id])
+  fazendaId   Int
+  estoque     Estoque   @relation(fields: [estoqueId], references: [id])
+  estoqueId   Int
+  produto     Produto   @relation(fields: [produtoId], references: [id])
+  produtoId   Int
+  saldo       Int
+  ativo       Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Inventario {
+  id                 Int      @id @default(autoincrement())
+  fazenda            Fazenda  @relation(fields: [fazendaId], references: [id])
+  fazendaId          Int
+  estoque            Estoque  @relation(fields: [estoqueId], references: [id])
+  estoqueId          Int
+  produto            Produto  @relation(fields: [produtoId], references: [id])
+  produtoId          Int
+  quantidadeAnterior Int
+  quantidadeAtual    Int
+  usuario            Usuario  @relation(fields: [usuarioId], references: [id])
+  usuarioId          Int
+  ativo              Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}

@@ -1,0 +1,74 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+
+jobs:
+  deploy-production:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Deploy to VPS (Production)
+        uses: appleboy/ssh-action@v0.1.5
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/yuri/stokv2-api
+
+            git checkout main
+
+            git reset --hard
+
+            git pull origin main
+
+            docker stop stokv2-api || true
+
+            docker rm stokv2-api || true
+
+            docker rmi stokv2-api/image || true
+
+            docker build --build-arg NODE_ENV=production --build-arg ENV_FILE=.env.production -t stokv2-api/image .
+
+            docker run -d -p 4000:4000 --name stokv2-api --env-file .env.production stokv2-api/image
+
+  deploy-staging:
+    if: github.ref == 'refs/heads/staging'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Deploy to VPS (Staging)
+        uses: appleboy/ssh-action@v0.1.5
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/yuri/stokv2-api
+
+            git checkout staging
+
+            git reset --hard
+
+            git pull origin staging
+
+            docker stop stokv2-api-staging || true
+
+            docker rm stokv2-api-staging || true
+
+            docker rmi stokv2-api-staging/image || true
+
+            docker build --build-arg NODE_ENV=staging --build-arg ENV_FILE=.env.staging -t stokv2-api-staging/image .
+
+            docker run -d -p 4001:4001 --name stokv2-api-staging --env-file .env.staging stokv2-api-staging/image
