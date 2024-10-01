@@ -1,0 +1,74 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+
+jobs:
+  deploy-production:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Deploy to VPS (Production)
+        uses: appleboy/ssh-action@v0.1.5
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/yuri/stokv2-app
+
+            git checkout main
+
+            git reset --hard
+
+            git pull origin main
+
+            docker stop stokv2-app || true
+
+            docker rm stokv2-app || true
+
+            docker rmi stokv2-app/image || true
+
+            docker build --build-arg NODE_ENV=production --build-arg ENV_FILE=.env.production -t stokv2-app/image .
+
+            docker run -d -p 3000:3000 --name stokv2-app --env PORT=3000 --env-file .env.production stokv2-app/image
+
+  deploy-staging:
+    if: github.ref == 'refs/heads/staging'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Deploy to VPS (Staging)
+        uses: appleboy/ssh-action@v0.1.5
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/yuri/stokv2-app
+
+            git checkout staging
+
+            git reset --hard
+
+            git pull origin staging
+
+            docker stop stokv2-app-staging || true
+
+            docker rm stokv2-app-staging || true
+
+            docker rmi stokv2-app-staging/image || true
+
+            docker build --build-arg NODE_ENV=staging --build-arg ENV_FILE=.env.staging -t stokv2-app-staging/image .
+
+            docker run -d -p 3001:3001 --name stokv2-app-staging --env PORT=3001 --env-file .env.staging stokv2-app-staging/image
