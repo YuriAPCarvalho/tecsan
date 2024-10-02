@@ -18,7 +18,7 @@ const FRONTEND_URL = process.env.FRONTEND_URL;
 
 async function bootstrap() {
   const corsOptions = {
-    origin: ['http://localhost:3000', FRONTEND_URL],
+    origin: [FRONTEND_URL],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     credentials: true,
   };
