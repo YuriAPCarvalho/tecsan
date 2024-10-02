@@ -14,11 +14,9 @@ import { join } from 'path';
 import { CustomPrismaExceptionFilter } from './filters/prisma-exception.filter';
 
 const PORT = process.env.PORT;
-const FRONTEND_URL = process.env.FRONTEND_URL;
-
 async function bootstrap() {
   const corsOptions = {
-    origin: ['http://localhost:5000', FRONTEND_URL],
+    origin: '*',
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     credentials: true,
   };
